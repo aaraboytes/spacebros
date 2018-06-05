@@ -8,19 +8,24 @@ public class Pool : MonoBehaviour {
 	private List<GameObject> pool;
 	void Start () {
 		GameObject Bucket = new GameObject (pooledObj.name + "_bucket");
+		pool = new List<GameObject> ();
 		for (int i = 0; i < amount; i++) {
 			GameObject aux = (GameObject)Instantiate (pooledObj, Vector3.zero, Quaternion.identity);
 			aux.SetActive (false);
-			aux.transform.parent = Bucket.transform;
+			aux.transform.SetParent (Bucket.transform);
 			pool.Add (aux);
 		}
 	}
+
+	int activeObj = 0;
 	public GameObject Recycle(){
-		foreach (GameObject o in pool) {
-			if (!o.activeInHierarchy) {
-				o.SetActive (true);
-				return  o;
-			} 
+		for(int i = 0;i<pool.Count;i++) {
+			if (!pool [i].activeInHierarchy) {
+				pool [i].SetActive (true);
+				activeObj++;
+				Debug.Log ("Recycled obj with id: " + i);
+				return  pool [i];
+			}
 		}
 		return null;
 	}
