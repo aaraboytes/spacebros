@@ -105,8 +105,8 @@ public class PlayerController : MonoBehaviour {
 		if (player.velocity.y > 0 && (!Input.GetButton("Jump") && !Input.GetKey(KeyCode.UpArrow))) {
 			player.velocity += Vector3.up * Physics.gravity.y * (jumpMultiplier - 1) * deltaTime;
 		}
-		else if (player.velocity.y < 0) {
-			//player.velocity += Vector3.up * Physics.gravity.y * (gravityIncreaser - 1) * deltaTime;	
+		else if (player.velocity.y < 0 && !walled) {
+			player.velocity += Vector3.up * Physics.gravity.y * (gravityIncreaser - 1) * deltaTime;	
 		}
 
 		//Wall jump
