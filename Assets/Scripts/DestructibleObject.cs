@@ -29,4 +29,11 @@ public class DestructibleObject : MonoBehaviour {
 			}
 		}
 	}
+	public void makeDamage(int damage){
+		currentObjLife -= damage;
+		if (currentObjLife <= 0) {
+			gameObject.SetActive (false);
+			audio.PlayOneShot (destroySound, 0.8f);
+		}
+	}
 }

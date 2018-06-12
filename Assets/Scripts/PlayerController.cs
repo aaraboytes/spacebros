@@ -37,9 +37,16 @@ public class PlayerController : MonoBehaviour {
 	public float shootForce;
 	public float shootCadence;
 	private float currentShootCadence = 0;
+	[Header("Grenades properties")]
+	public float averageLauchForce;
+	public float lauchCadence;
+	private float currentLaunchCadence;
+	public float difference;
 	[Header("Pooling")]
 	[SerializeField]
-	private Pool pool;
+	private Pool bulletPool;
+	[SerializeField]
+	private Pool grenadesPool;
 
 	private bool jumped;
 	private Rigidbody player;
@@ -141,6 +148,15 @@ public class PlayerController : MonoBehaviour {
 				currentShootCadence = 0;
 			}
 		}
+
+		//
+		currentLaunchCadence += deltaTime;
+		if (Input.GetKey (KeyCode.C)) {
+			if (currentLaunchCadence > lauchCadence) {
+				Grenades ();
+				currentLaunchCadence = 0;
+			}
+		}
 	}
 
 	bool isWallingRight(){
@@ -156,10 +172,26 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	void Shoot(){
-		GameObject bullet = pool.Recycle ();
+		GameObject bullet = bulletPool.Recycle ();
 		bullet.transform.position = bulletSpawnPoint.transform.position;
 		Rigidbody bulletRB = bullet.GetComponent<Rigidbody> ();
 		bulletRB.velocity = Vector3.zero;
 		bulletRB.AddForce (bulletSpawnPoint.transform.right * shootForce);
 	}
+
+	void Grenades(){
+		GameObject grenade1 = grenadesPool.Recycle ();
+		GameObject grenade2 = grenadesPool.Recycle ();
+		GameObject grenade3 = grenadesPool.Recycle ();
+		grenade1.transform.position = bulletSpawnPoint.transform.position;
+		grenade2.transform.position = bulletSpawnPoint.transform.position;
+		grenade3.transform.position = bulletSpawnPoint.transform.position;
+		Rigidbody gRb1 = grenade1.GetComponent<Rigidbody> ();
+		Rigidbody gRb2 = grenade2.GetComponent<Rigidbody> ();
+		Rigidbody gRb3 = grenade3.GetComponent<Rigidbody> ();
+		gRb1.AddForce (new Vector3(1,0.5f,0f) * (averageLauchForce - difference));
+		gRb2.AddForce (new Vector3(1,0.5f,0f) * averageLauchForce);
+		gRb3.AddForce (new Vector3(1,0.5f,0f) * (averageLauchForce + difference));
+	}
+
 }
