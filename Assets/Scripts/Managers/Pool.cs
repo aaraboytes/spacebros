@@ -16,14 +16,18 @@ public class Pool : MonoBehaviour {
 			pool.Add (aux);
 		}
 	}
-
-	int activeObj = 0;
-	public GameObject Recycle(){
+		
+	public GameObject Recycle(Vector3 position,Quaternion rotation){
 		for(int i = 0;i<pool.Count;i++) {
 			if (!pool [i].activeInHierarchy) {
+				pool [i].transform.position = position;
+				pool [i].transform.rotation = rotation;
+				if (pool [i].GetComponent<ParticleSystem> ()) {
+					ParticleSystem ps = pool [i].GetComponent<ParticleSystem> ();
+					ps.time = 0;
+					ps.Play ();
+				}
 				pool [i].SetActive (true);
-				activeObj++;
-				Debug.Log ("Recycled obj with id: " + i);
 				return  pool [i];
 			}
 		}

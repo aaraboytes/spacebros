@@ -7,8 +7,10 @@ public class ExplosiveObject : MonoBehaviour {
 	public int damage;
 	public float radius;
 	public float force;
-	public GameObject explosionEffect;
-	public GameObject damageEffect;
+	[SerializeField]
+	private Pool explosionEffect;
+	[SerializeField]
+	private Pool damageEffect;
 	public AudioClip damageSound;
 	public AudioClip destroySound;
 	private AudioSource audio;
@@ -28,7 +30,7 @@ public class ExplosiveObject : MonoBehaviour {
 		if (other.CompareTag ("Bullet")) {
 			if (currentObjLife > 0) {
 				currentObjLife--;
-				Instantiate (damageEffect, other.transform.position, Quaternion.Inverse(other.transform.rotation));
+				//damageEffect.Recycle(other.transform.position,Quaternion.Inverse(other.transform.rotation));
 				audio.PlayOneShot (damageSound, 0.5f);
 			} else {
 				Explossion ();
@@ -43,7 +45,7 @@ public class ExplosiveObject : MonoBehaviour {
 		}
 	}
 	void Explode(){
-		Instantiate (explosionEffect, transform.position, Quaternion.identity);
+		explosionEffect.Recycle (transform.position, Quaternion.identity);
 		Collider[] colliders = Physics.OverlapSphere (transform.position,radius);
 		foreach (Collider obj in colliders) {
 			Rigidbody rb = obj.GetComponent<Rigidbody> ();
@@ -63,7 +65,6 @@ public class ExplosiveObject : MonoBehaviour {
 	}
 	void Explossion(){
 		audio.PlayOneShot (destroySound, 0.8f);
-		Instantiate (explosionEffect, transform.position, transform.rotation);
 		Explode ();
 	}
 }
