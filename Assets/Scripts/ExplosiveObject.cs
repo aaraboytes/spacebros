@@ -16,20 +16,24 @@ public class ExplosiveObject : MonoBehaviour {
 	void OnEnable(){
 		currentObjLife = objLife;
 	}
+	void OnDrawGizmosSelected() {
+		Gizmos.color = Color.red;
+		Gizmos.DrawSphere(transform.position, radius);
+	}
 	void Start(){
 		audio = GetComponent<AudioSource> ();
 		currentObjLife = objLife;
 	}
 	void OnTriggerEnter(Collider other){
 		if (other.CompareTag ("Bullet")) {
-			other.gameObject.SetActive (false);
 			if (currentObjLife > 0) {
 				currentObjLife--;
-				Instantiate (damageEffect, transform.position, transform.rotation);
+				Instantiate (damageEffect, other.transform.position, Quaternion.Inverse(other.transform.rotation));
 				audio.PlayOneShot (damageSound, 0.5f);
 			} else {
 				Explossion ();
 			}
+			other.gameObject.SetActive (false);
 		}
 	}
 	public void makeDamage(int damage){
@@ -49,6 +53,10 @@ public class ExplosiveObject : MonoBehaviour {
 			DestructibleObject destrObj = obj.GetComponent<DestructibleObject> ();
 			if (destrObj != null) {
 				destrObj.makeDamage (damage);
+			}
+			PlayerController player = obj.GetComponent<PlayerController> ();
+			if (player != null) {
+				player.MakeDamage (damage);
 			}
 		}
 		gameObject.SetActive (false);

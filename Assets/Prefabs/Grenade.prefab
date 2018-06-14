@@ -114,10 +114,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   timer: 3
-  radius: 3
+  radius: 0.5
   force: 2000
   damage: 0
-  explosionEffect: {fileID: 1848740311659058, guid: aa11ce554f6d6944c85aac0ec33206d3,
+  explosionEffect: {fileID: 1000011128802252, guid: 96730f8640590934eacb6f860058e7f9,
     type: 2}
 --- !u!135 &135037018606843784
 SphereCollider:

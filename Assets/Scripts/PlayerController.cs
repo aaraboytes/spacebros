@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
 	[Header("Player properties")]
-	[SerializeField]
-	private GameObject playerModel;
 	//Horizontal move
+	public int life;
+	private int currentLife;
 	public float speed;
 	public float dashSpeed;
 	private float horizontal;
@@ -47,6 +47,9 @@ public class PlayerController : MonoBehaviour {
 	private Pool bulletPool;
 	[SerializeField]
 	private Pool grenadesPool;
+	[Header("Animations")]
+	[SerializeField]
+	private Animator anim;
 
 	private bool jumped;
 	private Rigidbody player;
@@ -54,7 +57,7 @@ public class PlayerController : MonoBehaviour {
 
 	void Start(){
 		player = GetComponent<Rigidbody> ();
-		collider = GetComponent<BoxCollider> ();
+		collider = GetComponent<CapsuleCollider> ();
 	}
 
 	void Update(){
@@ -64,6 +67,7 @@ public class PlayerController : MonoBehaviour {
 		if (isGrounded) {
 			walled = false;
 			jumped = false;
+			anim.SetBool ("jump", false);
 		}
 
 		//Input values
@@ -79,9 +83,12 @@ public class PlayerController : MonoBehaviour {
 			if (Input.GetAxisRaw ("Horizontal") == 0) {
 				tapCount++;
 			}
-			if (tapped && currentTapDelay > 0 && tapCount>1) {
+			//Dash
+			if (tapped && currentTapDelay > 0 && tapCount > 1) {
 				player.velocity = new Vector3 (dashSpeed * horizontal * deltaTime, player.velocity.y, 0f);	
 				currentTapDelay = tapDelay;
+				dashParticle.GetComponent<ParticleSystem> ().Play ();
+				//Normal run
 			} else {
 				player.velocity = new Vector3 (speed * horizontal * deltaTime, player.velocity.y, 0f);
 			}
@@ -89,10 +96,13 @@ public class PlayerController : MonoBehaviour {
 				tapped = true;
 				currentTapDelay = tapDelay;
 			}
+			//Flip character
 			if (horizontal > 0)
-				playerModel.transform.rotation = Quaternion.Euler (0, 0, 0);
+				gameObject.transform.rotation = Quaternion.Euler (0, 0, 0);
 			else if (horizontal < 0)
-				playerModel.transform.rotation = Quaternion.Euler (0, 180.0f, 0);
+				gameObject.transform.rotation = Quaternion.Euler (0, 180.0f, 0);
+		} else {
+			dashParticle.GetComponent<ParticleSystem> ().Pause ();
 		}
 		if (tapped) {
 			currentTapDelay-= Time.deltaTime;
@@ -106,6 +116,8 @@ public class PlayerController : MonoBehaviour {
 		if (vertical && !jumped) {
 			player.AddForce (Vector3.up * jumpForce);
 			jumped = true;
+			anim.SetBool ("jump", true);
+			dashParticle.GetComponent<ParticleSystem> ().Pause ();
 		}
 
 		//Fix jump
@@ -143,11 +155,13 @@ public class PlayerController : MonoBehaviour {
 		//Shoot
 		currentShootCadence += deltaTime;
 		if (Input.GetKey (KeyCode.Z)) {
+			anim.SetBool ("shoot", true);
 			if (currentShootCadence > shootCadence) {
 				Shoot ();
 				currentShootCadence = 0;
 			}
-		}
+		}else
+			anim.SetBool ("shoot", false);
 
 		//
 		currentLaunchCadence += deltaTime;
@@ -157,6 +171,10 @@ public class PlayerController : MonoBehaviour {
 				currentLaunchCadence = 0;
 			}
 		}
+
+		//Animaciones
+		anim.SetFloat ("velocity", Mathf.Abs (player.velocity.x + player.velocity.z));
+		anim.SetFloat ("velocityY", player.velocity.y);
 	}
 
 	bool isWallingRight(){
@@ -192,6 +210,14 @@ public class PlayerController : MonoBehaviour {
 		gRb1.AddForce (new Vector3(1,0.5f,0f) * (averageLauchForce - difference));
 		gRb2.AddForce (new Vector3(1,0.5f,0f) * averageLauchForce);
 		gRb3.AddForce (new Vector3(1,0.5f,0f) * (averageLauchForce + difference));
+	}
+
+	public void MakeDamage(int damage){
+		currentLife -= damage;
+		if (currentLife <= 0) {
+			anim.SetBool ("dead", true);
+			this.enabled = false;
+		}
 	}
 
 }

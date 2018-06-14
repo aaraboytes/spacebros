@@ -15,6 +15,12 @@ public class Grenade : MonoBehaviour {
 		exploded = false;
 		currentTimer = timer;
 	}
+
+	void OnDrawGizmosSelected() {
+		Gizmos.color = Color.red;
+		Gizmos.DrawSphere(transform.position, radius);
+	}
+
 	void Start(){
 		currentTimer = timer;
 	}
@@ -38,6 +44,10 @@ public class Grenade : MonoBehaviour {
 			DestructibleObject destrObj = obj.GetComponent<DestructibleObject> ();
 			if (destrObj != null) {
 				destrObj.makeDamage (damage);
+			}
+			PlayerController player = obj.GetComponent<PlayerController> ();
+			if (player != null) {
+				player.MakeDamage (damage);
 			}
 		}
 		gameObject.SetActive (false);
