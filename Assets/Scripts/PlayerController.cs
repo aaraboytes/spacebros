@@ -68,11 +68,13 @@ public class PlayerController : MonoBehaviour {
 		if (gunOut) {
 			float deltaTime = Time.deltaTime; 	//Delta time optimized
 			bool isGrounded = IsGrounded ();		//isGrounded optimized
+
 			//Reset values with ground
 			if (isGrounded) {
 				walled = false;
 				jumped = false;
 				anim.SetBool ("jump", false);
+				anim.SetBool ("climb", false);
 			}
 
 			//Input values
@@ -135,8 +137,10 @@ public class PlayerController : MonoBehaviour {
 			//Wall jump
 			if (isWallingLeft () && !isGrounded && horizontal < 0) {
 				walled = true;
+				anim.SetBool ("climb", true);
 			} else if (isWallingRight () && !isGrounded && horizontal > 0) {
 				walled = true;
+				anim.SetBool ("climb", true);
 			} else
 				walled = false;	
 
@@ -151,9 +155,9 @@ public class PlayerController : MonoBehaviour {
 				}
 			} else if (walled) {
 				//Salto hacia afuera + gravedad añadida
-
 			} else if (!walled) {
 				currentClimbTime = climbTime;
+				anim.SetBool ("climb", false);
 			}
 
 			//Shoot
@@ -195,7 +199,7 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	void Shoot(){
-		GameObject bullet = bulletPool.Recycle (bulletSpawnPoint.transform.position,Quaternion.identity);
+		GameObject bullet = bulletPool.Recycle (bulletSpawnPoint.transform.position,Quaternion.Euler(0,90*(transform.rotation.eulerAngles.y==0?1:-1),0));
 		Rigidbody bulletRB = bullet.GetComponent<Rigidbody> ();
 		bulletRB.velocity = Vector3.zero;
 		bulletRB.AddForce (bulletSpawnPoint.transform.right * shootForce);

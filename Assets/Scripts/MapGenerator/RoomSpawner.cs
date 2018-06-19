@@ -24,25 +24,25 @@ public class RoomSpawner : MonoBehaviour {
 					rand = Random.Range (0, templates.bottomRooms.Length);
 					room = (GameObject)Instantiate (templates.bottomRooms [rand], transform.position, Quaternion.identity);
 				} else
-					room = (GameObject)Instantiate (templates.bottom, transform.position, Quaternion.identity);
+					room = (GameObject)Instantiate (templates.bottom,  transform.position, Quaternion.identity);
 			} else if (openingDirection == 2) {
 				if (templates.maxRooms > 1) {
 					rand = Random.Range (0, templates.topRooms.Length);
-					room = (GameObject)Instantiate (templates.topRooms [rand], transform.position, Quaternion.identity);
+					room = (GameObject)Instantiate (templates.topRooms [rand],  transform.position, Quaternion.identity);
 				} else
-					room = (GameObject)Instantiate (templates.top, transform.position, Quaternion.identity);
+					room = (GameObject)Instantiate (templates.top,  transform.position, Quaternion.identity);
 			} else if (openingDirection == 3) {
 				if (templates.maxRooms > 1) {
 					rand = Random.Range (0, templates.leftRooms.Length);
-					room = (GameObject)Instantiate (templates.leftRooms [rand], transform.position, Quaternion.identity);
+					room = (GameObject)Instantiate (templates.leftRooms [rand],  transform.position, Quaternion.identity);
 				} else
-					room = (GameObject)Instantiate (templates.left, transform.position, Quaternion.identity);
+					room = (GameObject)Instantiate (templates.left,  transform.position, Quaternion.identity);
 			} else if (openingDirection == 4) {
 				if (templates.maxRooms > 1) {
 					rand = Random.Range (0, templates.rightRooms.Length);
-					room = (GameObject)Instantiate (templates.rightRooms [rand], transform.position, Quaternion.identity);
+					room = (GameObject)Instantiate (templates.rightRooms [rand],  transform.position, Quaternion.identity);
 				} else
-					room = (GameObject)Instantiate (templates.right, transform.position, Quaternion.identity);
+					room = (GameObject)Instantiate (templates.right,  transform.position, Quaternion.identity);
 			} else
 				room = new GameObject ();
 			room.transform.SetParent (templates.Rooms.transform);
@@ -57,10 +57,10 @@ public class RoomSpawner : MonoBehaviour {
 			Destroy (gameObject);
 		}
 	}
-	void OnTriggerEnter2D(Collider2D other){
+	void OnTriggerEnter(Collider other){
 		if (other.CompareTag ("SpawnPoint")) {
 			if (!other.GetComponent<RoomSpawner> ().spawned && !spawned) {
-				GameObject closedRoom = Instantiate (templates.closedRoom, transform.position, Quaternion.identity);
+				GameObject closedRoom = Instantiate (templates.closedRoom,  transform.position, Quaternion.identity);
 				templates.rooms.Add (closedRoom);
 				templates.maxRooms--;
 				Destroy (gameObject);

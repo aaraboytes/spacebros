@@ -27,6 +27,10 @@ public class Pool : MonoBehaviour {
 					ps.time = 0;
 					ps.Play ();
 				}
+				if (pool [i].GetComponent<Rigidbody> ()) {
+					Rigidbody rb = pool [i].GetComponent<Rigidbody> ();
+					rb.velocity = Vector3.zero;
+				}
 				pool [i].SetActive (true);
 				return  pool [i];
 			}

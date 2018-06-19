@@ -8,7 +8,8 @@ public class Grenade : MonoBehaviour {
 	public float radius;
 	public float force;
 	public int damage;
-	public GameObject explosionEffect;
+	[SerializeField]
+	private Pool explosionEffect;
 	private bool exploded = false;
 
 	void OnEnable(){
@@ -34,7 +35,7 @@ public class Grenade : MonoBehaviour {
 	}
 
 	void Explode(){
-		Instantiate (explosionEffect, transform.position, Quaternion.identity);
+		explosionEffect.Recycle (transform.position, Quaternion.identity);
 		Collider[] colliders = Physics.OverlapSphere (transform.position,radius);
 		foreach (Collider obj in colliders) {
 			Rigidbody rb = obj.GetComponent<Rigidbody> ();
