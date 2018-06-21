@@ -4,36 +4,37 @@ public class DestructibleObject : MonoBehaviour {
 	public int objLife;
 	public GameObject damageEffect;
 	public GameObject destroyEffect;
-	public AudioClip damageSound;
-	public AudioClip destroySound;
-	private AudioSource audio;
 	private int currentObjLife;
+	private Rigidbody rb;
 	void OnEnable(){
 		currentObjLife = objLife;
 	}
 	void Start(){
-		audio = GetComponent<AudioSource> ();
+		rb = GetComponent<Rigidbody> ();
+		rb.isKinematic = true;
 		currentObjLife = objLife;
 	}
 	void OnTriggerEnter(Collider other){
 		if (other.CompareTag ("Bullet")) {
+			rb.isKinematic = false;
 			other.gameObject.SetActive (false);
 			if (currentObjLife > 0) {
 				currentObjLife--;
 				Instantiate (damageEffect, transform.position, transform.rotation);
-				audio.PlayOneShot (damageSound, 0.5f);
 			} else {
-				audio.PlayOneShot (destroySound, 0.5f);
 				Instantiate (destroyEffect, transform.position, transform.rotation);
 				gameObject.SetActive (false);
 			}
 		}
+		if (other.CompareTag ("EnemyBullet")) {
+			other.gameObject.SetActive (false);
+		}
 	}
 	public void makeDamage(int damage){
+		rb.isKinematic = false;
 		currentObjLife -= damage;
 		if (currentObjLife <= 0) {
 			gameObject.SetActive (false);
-			audio.PlayOneShot (destroySound, 0.8f);
 		}
 	}
 }

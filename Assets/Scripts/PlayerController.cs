@@ -6,31 +6,42 @@ public class PlayerController : MonoBehaviour {
 	[Header("Player properties")]
 	//Horizontal move
 	public int life;
+	[SerializeField]
 	private int currentLife;
 	public float speed;
 	public float dashSpeed;
 	private float horizontal;
-	[SerializeField]
 	private bool tapped = false;
 	public float tapDelay = 0.5f;
 	private int tapCount = 0;
-	[SerializeField]
 	private float currentTapDelay;
 	//Jump
+	private bool vertical;
 	public float jumpForce;
+	public float jumpDelay = 0.1f;
+	private float currentJumpDelay = 0;
 	//Climb
-	public float climbDistance;
-	public float climbTime;
-	private float currentClimbTime;
+	[SerializeField]
+	public float climbSpeed;
 	private bool walled = false;
+	private bool climbLevel = false;
+	[Header("Gameplay Properties")]
+	public int grenadesAmount = 3;
 	[Header("Extra player properties")]
 	public float extraXCollide;
 	public float extraYCollide;
+	public float rotationToRight = 0;
+	public float rotationToLeft = 180;
+	[SerializeField]
+	public GameObject playerModel;
 	[SerializeField]
 	private GameObject dashParticle;
 	[Header("Gravity modifiers")]
 	public float jumpMultiplier;
 	public float gravityIncreaser;
+	[Header("KnockBack")]
+	public float knockBackForce = 300;
+	public float upKnockBackForce = 300;
 	[Header("Shoot properties")]
 	[SerializeField]
 	private Transform bulletSpawnPoint;
@@ -51,6 +62,10 @@ public class PlayerController : MonoBehaviour {
 	[SerializeField]
 	private Animator anim;
 	private bool gunOut = false;
+	[Header("AudioEffects")]
+	private AudioSource audio;
+	public AudioClip[] damageClips;
+	public AudioClip shootClip;
 
 	private bool jumped;
 	private Rigidbody player;
@@ -59,33 +74,53 @@ public class PlayerController : MonoBehaviour {
 	void Start(){
 		player = GetComponent<Rigidbody> ();
 		collider = GetComponent<CapsuleCollider> ();
+		audio = GetComponent<AudioSource> ();
+		currentLife = life;
+		GameManager._instance.ModifyLifeSlider (life, currentLife);
 	}
 
 	void Update(){
+		//Chequep de animacion de sacar arma
 		if (!anim.GetCurrentAnimatorStateInfo(0).IsName("GunOut")) {
 			gunOut = true;
 		}
-		if (gunOut) {
+		//Chequeo de animacion de escalar obstaculo
+		if (anim.GetCurrentAnimatorStateInfo (0).IsName ("ClimbLevel")) {
+			player.isKinematic = true;
+		} else {
+			player.isKinematic = false;
+			/*if (climbLevel) {
+				playerModel.transform.SetParent (null);
+				player.position = playerModel.transform.position;
+				playerModel.transform.SetParent (gameObject.transform);
+			}*/
+			climbLevel = false;
+			anim.SetBool ("climbLevel", false);
+		}
+		if (gunOut && !climbLevel && !GameManager._instance.pause) {
 			float deltaTime = Time.deltaTime; 	//Delta time optimized
 			bool isGrounded = IsGrounded ();		//isGrounded optimized
 
 			//Reset values with ground
 			if (isGrounded) {
 				walled = false;
-				jumped = false;
+				currentJumpDelay += deltaTime;
+				if (currentJumpDelay > jumpDelay) {
+					jumped = false;
+					currentJumpDelay = 0;
+				}
 				anim.SetBool ("jump", false);
 				anim.SetBool ("climb", false);
 			}
 
 			//Input values
 			horizontal = Input.GetAxis ("Horizontal");
-			bool vertical;
-			if (Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow))
+			if (Input.GetAxis("Vertical")>=0.5f || Input.GetKeyDown (KeyCode.UpArrow))
 				vertical = true;
 			else
 				vertical = false;
 
-			//Horizontal move
+			//********************************************Horizontal move**********************************
 			if (horizontal != 0) {
 				if (Input.GetAxisRaw ("Horizontal") == 0) {
 					tapCount++;
@@ -105,9 +140,9 @@ public class PlayerController : MonoBehaviour {
 				}
 				//Flip character
 				if (horizontal > 0)
-					gameObject.transform.rotation = Quaternion.Euler (0, 0, 0);
+					gameObject.transform.rotation = Quaternion.Euler (0, rotationToRight, 0);
 				else if (horizontal < 0)
-					gameObject.transform.rotation = Quaternion.Euler (0, 180.0f, 0);
+					gameObject.transform.rotation = Quaternion.Euler (0, rotationToLeft, 0);
 			} else {
 				dashParticle.GetComponent<ParticleSystem> ().Pause ();
 			}
@@ -118,13 +153,11 @@ public class PlayerController : MonoBehaviour {
 				tapped = false;
 				tapCount = 0;
 			}
-
+			//*******************************************************************************************************
+			//******************************************Vertical*****************************************************
 			//Jump
 			if (vertical && !jumped) {
-				player.AddForce (Vector3.up * jumpForce);
-				jumped = true;
-				anim.SetBool ("jump", true);
-				dashParticle.GetComponent<ParticleSystem> ().Pause ();
+				Jump ();
 			}
 
 			//Fix jump
@@ -134,32 +167,20 @@ public class PlayerController : MonoBehaviour {
 				player.velocity += Vector3.up * Physics.gravity.y * (gravityIncreaser - 1) * deltaTime;	
 			}
 
-			//Wall jump
-			if (isWallingLeft () && !isGrounded && horizontal < 0) {
-				walled = true;
-				anim.SetBool ("climb", true);
-			} else if (isWallingRight () && !isGrounded && horizontal > 0) {
+			//Start Climb
+			if ((isWallingLeft ()||isWallingRight()) && !isGrounded && horizontal!=0) {
 				walled = true;
 				anim.SetBool ("climb", true);
 			} else
 				walled = false;	
 
 			//Climb
-			if (walled && vertical) {
-				//player.velocity = Vector3.zero;
-				player.MovePosition (transform.position + Vector3.up * climbDistance * deltaTime);
-				currentClimbTime += deltaTime;
-				if (currentClimbTime > climbTime) {
-					currentClimbTime = 0;
-					player.MovePosition (transform.position + Vector3.up * climbDistance * deltaTime);
-				}
-			} else if (walled) {
-				//Salto hacia afuera + gravedad añadida
-			} else if (!walled) {
-				currentClimbTime = climbTime;
+			if (walled) {
+				Climb ();
+			} else {
 				anim.SetBool ("climb", false);
 			}
-
+			//***********************************************************************************************
 			//Shoot
 			currentShootCadence += deltaTime;
 			if (Input.GetKey (KeyCode.Z)) {
@@ -171,12 +192,14 @@ public class PlayerController : MonoBehaviour {
 			} else
 				anim.SetBool ("shoot", false);
 
-			//
+			//Throw Grenades
 			currentLaunchCadence += deltaTime;
-			if (Input.GetKey (KeyCode.C)) {
+			if (Input.GetKey (KeyCode.C) && grenadesAmount>0) {
 				if (currentLaunchCadence > lauchCadence) {
 					Grenades ();
 					currentLaunchCadence = 0;
+					grenadesAmount--;
+					GameManager._instance.ModifyGrenadesAmount (grenadesAmount);
 				}
 			}
 
@@ -184,6 +207,41 @@ public class PlayerController : MonoBehaviour {
 			anim.SetFloat ("velocity", Mathf.Abs (player.velocity.x + player.velocity.z));
 			anim.SetFloat ("velocityY", player.velocity.y);
 		}
+	}
+	void Jump(){
+		player.AddForce (Vector3.up * jumpForce);
+		jumped = true;
+		anim.SetBool ("jump", true);
+		dashParticle.GetComponent<ParticleSystem> ().Pause ();
+	}
+
+	void Climb(){
+		//Checking if there is no wall in front of player when hes climbing
+		RaycastHit hit;
+		if (!Physics.Raycast (new Vector3(transform.position.x,transform.position.y + collider.bounds.extents.y,0f), (transform.rotation.y == rotationToRight ? Vector3.right : -Vector3.right), out hit,1.0f)&&
+			(!Physics.Raycast(new Vector3(transform.position.x,transform.position.y + collider.bounds.extents.y+1.0f,0f), (transform.rotation.y == rotationToRight ? Vector3.right : -Vector3.right),1.0f))) {
+			Debug.DrawRay (new Vector3(transform.position.x,transform.position.y + collider.bounds.extents.y,0f), Vector3.right * 0.5f, Color.blue);
+			Debug.Log ("Not Colliding");
+			anim.SetBool ("climbLevel",true);
+			climbLevel = true;
+			StartCoroutine (MoveToClimbPosition ());
+		}
+		//Climb movement
+		if (vertical) {
+			player.MovePosition (player.position + (Vector3.up * climbSpeed * Time.deltaTime));
+		}
+	}
+
+	float timer = 0;
+	IEnumerator MoveToClimbPosition(){
+		if(timer > 0.5f) {
+			playerModel.transform.SetParent (null);
+			player.position = new Vector3 (transform.position.x + (transform.rotation.y == rotationToRight ? 0.5f : -0.5f), 0.5f, 0.0f);
+			playerModel.transform.SetParent (player.transform);
+			timer = 0;
+			yield return null;
+		}
+		timer+=Time.deltaTime;
 	}
 
 	bool isWallingRight(){
@@ -199,7 +257,8 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	void Shoot(){
-		GameObject bullet = bulletPool.Recycle (bulletSpawnPoint.transform.position,Quaternion.Euler(0,90*(transform.rotation.eulerAngles.y==0?1:-1),0));
+		audio.PlayOneShot (shootClip,0.5f);
+		GameObject bullet = bulletPool.Recycle (bulletSpawnPoint.transform.position,Quaternion.Euler(0,90*(transform.rotation.eulerAngles.y==rotationToRight?1:-1),0));
 		Rigidbody bulletRB = bullet.GetComponent<Rigidbody> ();
 		bulletRB.velocity = Vector3.zero;
 		bulletRB.AddForce (bulletSpawnPoint.transform.right * shootForce);
@@ -220,10 +279,25 @@ public class PlayerController : MonoBehaviour {
 
 	public void MakeDamage(int damage){
 		currentLife -= damage;
-		if (currentLife <= 0) {
+		GameManager._instance.ModifyLifeSlider (life, currentLife);
+		if (currentLife > 0) {
+			audio.PlayOneShot (damageClips [Random.Range (0, damageClips.Length - 1)]);
+		}
+		else{
 			anim.SetBool ("dead", true);
 			this.enabled = false;
+			GameManager._instance.GameOver ();
 		}
 	}
 
+	void OnTriggerEnter(Collider other){
+		if(other.CompareTag("EnemyBullet")){
+			if (currentLife > 0) {
+				other.gameObject.SetActive (false);
+				Vector3 knockBack = (transform.position - other.transform.position).normalized;
+				player.AddForce ((knockBack * knockBackForce) + (Vector3.up * upKnockBackForce));
+				MakeDamage (other.GetComponent<EnemyBullet> ().damage);
+			}
+		}
+	}
 }

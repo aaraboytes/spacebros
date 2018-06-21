@@ -7,6 +7,7 @@ TagManager:
   - Bullet
   - Rooms
   - SpawnPoint
+  - EnemyBullet
   layers:
   - Default
   - TransparentFX
