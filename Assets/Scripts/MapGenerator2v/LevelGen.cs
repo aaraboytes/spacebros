@@ -11,6 +11,7 @@ public class LevelGen : MonoBehaviour {
 	public int barrelAmount;
 	public GameObject scorePoint;
 	public int scorePointAmount;
+	public GameObject finish;
 	[Header("Tiles")]
 	public GameObject[] tiles;
 	public GameObject indestructibleWall;
@@ -42,6 +43,8 @@ public class LevelGen : MonoBehaviour {
 	public float extraWallY;
 
 	void Start () {
+		player.SetActive (false);
+		tileAmount = PlayerPrefs.GetInt ("mapSize", 100);
 		loadingScreen.gameObject.SetActive (true);
 		Random.seed = PlayerPrefs.GetInt ("seed", 150);
 		map = new GameObject ("Map");
@@ -134,6 +137,7 @@ public class LevelGen : MonoBehaviour {
 		for (int i = 0; i < barrelAmount; i++) {
 			GameObject currentBarrel;
 			currentBarrel = (GameObject)Instantiate (barrel, createdTiles [Random.Range (0, createdTiles.Count)], Quaternion.identity);
+			currentBarrel.transform.rotation = Quaternion.Euler (90f, 0f, 0);
 			currentBarrel.SetActive (true);
 			currentBarrel.transform.SetParent (mapObjects.transform);
 		}
@@ -143,6 +147,9 @@ public class LevelGen : MonoBehaviour {
 			currentScorePoint.SetActive (true);
 			currentScorePoint.transform.SetParent (mapObjects.transform);
 		}
+		GameObject auxFinish = (GameObject)Instantiate (finish, createdTiles [Random.Range (0, createdTiles.Count)], Quaternion.identity);
+		auxFinish.SetActive (true);
+		auxFinish.transform.SetParent (mapObjects.transform);
 	}
 
 	void CreateWallValues(){
@@ -179,5 +186,18 @@ public class LevelGen : MonoBehaviour {
 				}
 			}
 		}
+	}
+
+	public bool IsACornerHere(Vector3 pos){
+		if (createdTiles.Contains (pos)) {
+			if (createdTiles.Contains (new Vector3 (pos.x, pos.y + tileSize, 0f))) {
+				//Si hay algo encima
+				return false;
+			} else
+				//Si no hay nada encima
+				return true;
+		} else
+			//Esta posicion no pertenece a un bloque
+			return false;
 	}
 }
